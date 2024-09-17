@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "455629437938",
+    "project_id": "nihaar-app",
+    "storage_bucket": "nihaar-app.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:455629437938:android:8d33ddee6b6d476efe496b",
+        "android_client_info": {
+          "package_name": "com.invoice"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "455629437938-9qa7vqpstd6uv385sg9ugtkodpapf8e1.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAca6kMypOLDaXqVLtrwZZsi3WiCeftgI8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "455629437938-9qa7vqpstd6uv385sg9ugtkodpapf8e1.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
