@@ -78,7 +78,7 @@ const Notification = () => {
             )}
 
             <TouchableOpacity
-              style={tw`bg-blue-500 py-2 mt-4 rounded-lg shadow-md`}
+              style={tw`bg-teal-800 py-2 mt-4 rounded-lg shadow-md`}
               onPress={() => setModalVisible(false)}>
               <Text style={tw`text-white text-center text-lg`}>Close</Text>
             </TouchableOpacity>

@@ -6,12 +6,11 @@ import LinearGradient from 'react-native-linear-gradient';
 
 const RegisterSupplier = () => {
   const [name, setName] = useState('');
-  const [contactNumber, setContactNumber] = useState('');
-  const [companyName, setCompanyName] = useState('');
+  const [commission, setCommission] = useState(''); // Change from contactNumber to commission
   const [uploading, setUploading] = useState(false);
 
   const handleSubmit = async () => {
-    if (!name || !contactNumber || !companyName) {
+    if (!name || !commission) {
       Alert.alert('Missing fields', 'Please fill all fields before submitting.');
       return;
     }
@@ -20,15 +19,13 @@ const RegisterSupplier = () => {
     try {
       await firestore().collection('suppliers').add({
         name,
-        contactNumber,
-        companyName,
+        commission: parseFloat(commission), // Ensure commission is stored as a number
         createdAt: firestore.FieldValue.serverTimestamp(),
       });
       setUploading(false);
       Alert.alert('Success', 'Supplier has been added successfully');
       setName('');
-      setContactNumber('');
-      setCompanyName('');
+      setCommission(''); // Clear the commission input
     } catch (error) {
       console.error('Error adding supplier: ', error);
       setUploading(false);
@@ -47,13 +44,13 @@ const RegisterSupplier = () => {
         placeholderTextColor="#888"
       />
 
-      <Text style={tw`text-lg font-semibold text-gray-800 mb-2`}>Contact Number:</Text>
+      <Text style={tw`text-lg font-semibold text-gray-800 mb-2`}>Commission:</Text>
       <TextInput
-        value={contactNumber}
-        onChangeText={setContactNumber}
-        keyboardType="phone-pad"
+        value={commission}
+        onChangeText={setCommission}
+        keyboardType="numeric" // Use numeric keyboard for commission
         style={tw`border-b border-gray-300 mb-4 p-2 text-black`}
-        placeholder="Enter contact number"
+        placeholder="Enter commission"
         placeholderTextColor="#888"
       />
 
@@ -81,3 +78,4 @@ const styles = StyleSheet.create({
 });
 
 export default RegisterSupplier;
+

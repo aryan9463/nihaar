@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -19,7 +19,6 @@ import {
   updateDoc,
 } from '@react-native-firebase/firestore';
 import tw from 'twrnc';
-import QRCode from 'react-native-qrcode-svg'; // QR code generation
 import RNPrint from 'react-native-print'; // For printing functionality
 
 const db = getFirestore();
@@ -41,7 +40,7 @@ const ProductsData = () => {
     const fetchData = async () => {
       try {
         const snapshot = await getDocs(datacollection);
-        const items = snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
+        const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         setData(items);
       } catch (err) {
         setError('Failed to fetch data');
@@ -73,7 +72,7 @@ const ProductsData = () => {
 
   const deleteItem = async id => {
     try {
-      await deleteDoc(doc(db, 'dataCollection', id));
+      await deleteDoc(doc(db, 'datacolnew', id));
       setData(prevData => prevData.filter(item => item.id !== id));
       Alert.alert('Success', 'Item deleted successfully');
     } catch (error) {
@@ -131,10 +130,7 @@ const ProductsData = () => {
   const decrementItem = () => {
     setEditingValues(prevValues => ({
       ...prevValues,
-      quantity: Math.max(
-        1,
-        parseInt(prevValues.quantity) - 1,
-      ).toString(),
+      quantity: Math.max(1, parseInt(prevValues.quantity) - 1).toString(),
     }));
   };
 
@@ -176,17 +172,14 @@ const ProductsData = () => {
         </head>
         <body>
           <h1>${item.name}</h1>
-          <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${
-            item.id
-          }" alt="QR Code" />
-          <p>₹${(item.price+ item.commission).toFixed(2)}</p>
+          <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${item.id}" alt="QR Code" />
+          <p>₹${(item.price + item.commission).toFixed(2)}</p>
         </body>
       </html>
-
-
     `;
+
     try {
-      await RNPrint.print({html: htmlContent});
+      await RNPrint.print({ html: htmlContent });
     } catch (error) {
       console.error('Error generating printable tag: ', error);
     }
@@ -227,39 +220,30 @@ const ProductsData = () => {
             Available Products
           </Text>
         )}
-        renderItem={({item}) => (
-          <View
-            style={tw`bg-white p-4 mb-5 rounded-lg shadow flex-row justify-between`}>
+        renderItem={({ item }) => (
+          <View style={tw`bg-white p-4 mb-5 rounded-lg shadow flex-row justify-between`}>
             <View>
               {editingItemId === item.id ? (
                 <>
                   <TextInput
                     value={editingValues.name}
-                    onChangeText={text =>
-                      setEditingValues(prev => ({...prev, name: text}))
-                    }
+                    onChangeText={text => setEditingValues(prev => ({ ...prev, name: text }))}
                     style={tw`border-b mb-2 p-2 text-black`}
                   />
                   <TextInput
                     value={editingValues.description}
-                    onChangeText={text =>
-                      setEditingValues(prev => ({...prev, description: text}))
-                    }
+                    onChangeText={text => setEditingValues(prev => ({ ...prev, description: text }))}
                     style={tw`border-b mb-2 p-2 text-black`}
                   />
                   <TextInput
                     value={editingValues.price}
-                    onChangeText={text =>
-                      setEditingValues(prev => ({...prev, price: text}))
-                    }
+                    onChangeText={text => setEditingValues(prev => ({ ...prev, price: text }))}
                     keyboardType="numeric"
                     style={tw`border-b mb-2 p-2 text-black`}
                   />
                   <TextInput
                     value={editingValues.quantity}
-                    onChangeText={text =>
-                      setEditingValues(prev => ({...prev, quantity: text}))
-                    }
+                    onChangeText={text => setEditingValues(prev => ({ ...prev, quantity: text }))}
                     keyboardType="numeric"
                     style={tw`border-b mb-2 p-2 text-black`}
                   />
@@ -267,9 +251,7 @@ const ProductsData = () => {
                     <TouchableOpacity onPress={decrementItem}>
                       <Text style={tw`text-2xl px-2`}>-</Text>
                     </TouchableOpacity>
-                    <Text style={tw`text-xl`}>
-                      {editingValues.quantity}
-                    </Text>
+                    <Text style={tw`text-xl`}>{editingValues.quantity}</Text>
                     <TouchableOpacity onPress={incrementItem}>
                       <Text style={tw`text-2xl px-2`}>+</Text>
                     </TouchableOpacity>
@@ -278,50 +260,34 @@ const ProductsData = () => {
                 </>
               ) : (
                 <>
-                  <Text style={tw`text-xl font-bold text-black`}>
-                    {item.name}
-                  </Text>
-                  <Text style={tw`text-sm text-gray-500`}>
-                    {item.description}
-                  </Text>
-                  <Text style={tw`text-lg text-green-600`}>
-                    ₹{(item.price+ item.commission).toFixed(2)}
-                  </Text>
-                  <Text style={tw`text-yellow-600`}>
-                    Items: {item.quantity}
-                  </Text>
-                  <TouchableOpacity
-                    style={tw`absolute bottom-0 z-1 left-0 opacity-50`}
-                    onPress={() => confirmDelete(item.id)}>
-                    <Image
-                      style={tw`w-8 h-8`}
-                      source={require('../images/bin.png')}
-                    />
+                  <Text style={tw`text-xl font-bold text-black`}>{item.name}</Text>
+                  <Text style={tw`text-sm text-gray-500`}>{item.description}</Text>
+                  <Text style={tw`text-lg text-green-600`}>₹{(item.price + item.commission).toFixed(2)}</Text>
+                  <Text style={tw`text-yellow-600`}>Items: {item.quantity}</Text>
+                  <TouchableOpacity onPress={() => confirmDelete(item.id)}>
+                    <Text style={tw`text-red-500`}>Delete</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity
-                    style={tw`absolute bottom-0 z-1 left-10 opacity-50`}
-                    onPress={() => startEditing(item)}>
-                    <Image
-                      style={tw`w-8 h-8`}
-                      source={require('../images/pen.png')}
-                    />
+                  <TouchableOpacity onPress={() => startEditing(item)}>
+                    <Text style={tw`text-blue-500`}>Edit</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity
-                    style={tw`absolute bottom-0 z-1 left-20 `}
-                    onPress={() => generatePrintableTag(item)}>
-                    <Image
-                      style={tw`w-7 h-7`}
-                      source={require('../images/label.png')}
-                    />
+                  <TouchableOpacity onPress={() => generatePrintableTag(item)}>
+                    <Text style={tw`text-purple-500`}>Print Tag</Text>
                   </TouchableOpacity>
                 </>
               )}
             </View>
             <View>
-              {item.imageUrl && (
-                <Image
-                  source={{uri: item.imageUrl}}
-                  style={tw`w-36 h-36 rounded-lg mt-2`}
+              {item.imageUrl && Array.isArray(item.imageUrl) && (
+                <FlatList
+                  data={item.imageUrl}
+                  keyExtractor={(imageUri, index) => index.toString()}
+                  horizontal
+                  renderItem={({ item: imageUri }) => (
+                    <Image
+                      source={{ uri: imageUri }}
+                      style={tw`w-36 h-36 rounded-lg mt-2`}
+                    />
+                  )}
                 />
               )}
             </View>

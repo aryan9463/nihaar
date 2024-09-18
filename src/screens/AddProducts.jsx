@@ -6,7 +6,8 @@ import {
   TouchableOpacity, 
   View, 
   Image, 
-  StyleSheet 
+  StyleSheet, 
+  ScrollView 
 } from 'react-native';
 import ImagePicker from 'react-native-image-crop-picker';
 import storage from '@react-native-firebase/storage';
@@ -16,13 +17,13 @@ import LinearGradient from 'react-native-linear-gradient';
 
 // Initialize Firestore
 const firebaseConfig = {
-  apiKey: "AIzaSyCOFFtTGvD-B7rhBva5pX13slbLv3HnZXA",
-  authDomain: "nihaar-d5d2f.firebaseapp.com",
-  projectId: "nihaar-d5d2f",
-  storageBucket: "nihaar-d5d2f.appspot.com",
-  messagingSenderId: "532552721085",
-  appId: "1:532552721085:web:9ba14efd088d3329d8cdd4",
-  measurementId: "G-FFBKMYK2VD"
+  apiKey: 'AIzaSyCOFFtTGvD-B7rhBva5pX13slbLv3HnZXA',
+  authDomain: 'nihaar-d5d2f.firebaseapp.com',
+  projectId: 'nihaar-d5d2f',
+  storageBucket: 'nihaar-d5d2f.appspot.com',
+  messagingSenderId: '532552721085',
+  appId: '1:532552721085:web:9ba14efd088d3329d8cdd4',
+  measurementId: 'G-FFBKMYK2VD'
 };
 
 if (!firebase.apps.length) {
@@ -30,46 +31,53 @@ if (!firebase.apps.length) {
 }
 
 const db = getFirestore();
-const datacollection = collection(db, "datacolnew");
+const datacollection = collection(db, 'datacolnew');
 
 const AddProducts = () => {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [imageUri, setImageUri] = useState(null);
+  const [imageUris, setImageUris] = useState([]); // Array for multiple images
   const [commission, setCommission] = useState('');
   const [price, setPrice] = useState('');
+  const [numberOfItems, setNumberOfItems] = useState('');
   const [uploading, setUploading] = useState(false);
 
-  const pickImage = () => {
+  const pickImages = () => {
     ImagePicker.openPicker({
       mediaType: 'photo',
+      multiple: true, // Allow selection of multiple images
       cropping: true,
       width: 800,
       height: 800,
-    }).then(image => {
-      setImageUri(image.path);
+    }).then(images => {
+      const imagePaths = images.map(image => image.path);
+      setImageUris(prev => [...prev, ...imagePaths]); // Update state with multiple image paths
     }).catch(error => {
       console.error('ImagePicker Error: ', error);
     });
   };
 
-  const uploadImage = async () => {
-    if (!imageUri) {
-      Alert.alert('No Image Selected', 'Please select an image before submitting.');
+  const uploadImages = async () => {
+    if (imageUris.length === 0) {
+      Alert.alert('No Images Selected', 'Please select images before submitting.');
       return null;
     }
 
-    const fileName = `${new Date().getTime()}.jpg`; // Unique name for each image
-    const reference = storage().ref(fileName);
     setUploading(true);
+    const imageUrls = [];
 
     try {
-      await reference.putFile(imageUri);
-      const imageUrl = await reference.getDownloadURL();
-      return imageUrl;
+      for (const imageUri of imageUris) {
+        const fileName = `${new Date().getTime()}-${imageUri.split('/').pop()}`; // Unique name for each image
+        const reference = storage().ref(fileName);
+        await reference.putFile(imageUri);
+        const imageUrl = await reference.getDownloadURL();
+        imageUrls.push(imageUrl); // Collect all image URLs
+      }
+      return imageUrls;
     } catch (error) {
-      console.error('Error uploading image: ', error);
-      Alert.alert('Error', 'There was a problem uploading the image.');
+      console.error('Error uploading images: ', error);
+      Alert.alert('Error', 'There was a problem uploading the images.');
       return null;
     } finally {
       setUploading(false);
@@ -77,15 +85,21 @@ const AddProducts = () => {
   };
 
   const handleSubmit = async () => {
+    if (!name || !description || !price || !commission || !numberOfItems) {
+      Alert.alert('Missing fields', 'Please fill all fields before submitting.');
+      return;
+    }
+
     try {
-      const imageUrl = await uploadImage();
-      if (imageUrl) {
+      const imageUrls = await uploadImages();
+      if (imageUrls) {
         await addDoc(datacollection, {
           name,
           description,
           price: parseFloat(price),
           commission: parseFloat(commission),
-          imageUrl,
+          numberOfItems: parseInt(numberOfItems, 10),
+          imageUrls, // Save array of image URLs
           createdAt: serverTimestamp(),
         });
         Alert.alert('Success', 'Form submitted successfully!');
@@ -93,7 +107,8 @@ const AddProducts = () => {
         setDescription('');
         setPrice('');
         setCommission('');
-        setImageUri(null);
+        setNumberOfItems('');
+        setImageUris([]); // Clear the image array
       }
     } catch (error) {
       console.error('Error submitting form: ', error);
@@ -103,56 +118,69 @@ const AddProducts = () => {
 
   return (
     <LinearGradient colors={['#e0f7fa', '#80deea']} style={styles.container}>
-      <Text style={styles.label}>Name:</Text>
-      <TextInput
-        value={name}
-        onChangeText={setName}
-        style={styles.input}
-        placeholder="Enter your name"
-        placeholderTextColor="#888"
-      />
-      <Text style={styles.label}>Description:</Text>
-      <TextInput
-        value={description}
-        placeholder="Enter your Description"
-        placeholderTextColor="#888"
-        onChangeText={setDescription}
-        style={styles.input}
-      />
-      <Text style={styles.label}>Price:</Text>
-      <TextInput
-        value={price}
-        placeholder='Price'
-        placeholderTextColor="#888"
-        onChangeText={setPrice}
-        keyboardType="numeric"
-        style={styles.input}
-      />
-      <Text style={styles.label}>Commission:</Text>
-      <TextInput
-        value={commission}
-        onChangeText={setCommission}
-        keyboardType="numeric"
-        placeholder="Enter commission"
-        placeholderTextColor="#888"
-        style={styles.input}
-      />
-      <TouchableOpacity 
-        style={styles.button} 
-        onPress={pickImage}>
-        <Text style={styles.buttonText}>Pick Image</Text>
-      </TouchableOpacity>
-      {imageUri && (
-        <View style={styles.imageContainer}>
-          <Image source={{ uri: imageUri }} style={styles.image} />
-        </View>
-      )}
-      <TouchableOpacity 
-        style={styles.button} 
-        onPress={handleSubmit} 
-        disabled={uploading}>
-        <Text style={styles.buttonText}>Submit</Text>
-      </TouchableOpacity>
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
+        <Text style={styles.label}>Name:</Text>
+        <TextInput
+          value={name}
+          onChangeText={setName}
+          style={styles.input}
+          placeholder="Enter product name"
+          placeholderTextColor="#888"
+        />
+        <Text style={styles.label}>Description:</Text>
+        <TextInput
+          value={description}
+          placeholder="Enter product description"
+          placeholderTextColor="#888"
+          onChangeText={setDescription}
+          style={styles.input}
+        />
+        <Text style={styles.label}>Price:</Text>
+        <TextInput
+          value={price}
+          placeholder='Price'
+          placeholderTextColor="#888"
+          onChangeText={setPrice}
+          keyboardType="numeric"
+          style={styles.input}
+        />
+        <Text style={styles.label}>Commission:</Text>
+        <TextInput
+          value={commission}
+          onChangeText={setCommission}
+          keyboardType="numeric"
+          placeholder="Enter commission"
+          placeholderTextColor="#888"
+          style={styles.input}
+        />
+        <Text style={styles.label}>Number of Items:</Text>
+        <TextInput
+          value={numberOfItems}
+          onChangeText={setNumberOfItems}
+          keyboardType="numeric"
+          placeholder="Enter number of items"
+          placeholderTextColor="#888"
+          style={styles.input}
+        />
+        <TouchableOpacity style={styles.button} onPress={pickImages}>
+          <Text style={styles.buttonText}>Pick Images</Text>
+        </TouchableOpacity>
+        {imageUris.length > 0 && (
+          <View style={styles.imageContainer}>
+            {imageUris.map((uri, index) => (
+              <View key={index} style={styles.imageWrapper}>
+                <Image source={{ uri }} style={styles.image} />
+                <TouchableOpacity onPress={() => setImageUris(imageUris.filter((_, i) => i !== index))} style={styles.removeButton}>
+                  <Text style={styles.removeButtonText}>Remove</Text>
+                </TouchableOpacity>
+              </View>
+            ))}
+          </View>
+        )}
+        <TouchableOpacity style={styles.button} onPress={handleSubmit} disabled={uploading}>
+          <Text style={styles.buttonText}>Submit</Text>
+        </TouchableOpacity>
+      </ScrollView>
     </LinearGradient>
   );
 };
@@ -160,6 +188,8 @@ const AddProducts = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  scrollContainer: {
     padding: 20,
   },
   label: {
@@ -184,11 +214,29 @@ const styles = StyleSheet.create({
   },
   imageContainer: {
     marginVertical: 20,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  imageWrapper: {
+    position: 'relative',
+    margin: 5,
   },
   image: {
     width: 100,
     height: 100,
     resizeMode: 'cover',
+  },
+  removeButton: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    backgroundColor: 'red',
+    padding: 2,
+    borderRadius: 15,
+  },
+  removeButtonText: {
+    color: 'white',
+    fontSize: 12,
   },
 });
 

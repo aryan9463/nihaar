@@ -19,6 +19,15 @@ import LinearGradient from 'react-native-linear-gradient';
 const Stack = createStackNavigator();
 
 const App = () => {
+  // if (__DEV__) {
+
+  //   console.log = () => {};
+  
+  //   console.warn = () => {};//hides errors from mobile screen
+  
+  //   console.error = () => {};
+  
+  // }
   return (
     <Provider store={store}>
       <NavigationContainer>

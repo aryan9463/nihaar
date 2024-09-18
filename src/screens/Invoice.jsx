@@ -17,21 +17,23 @@ import {
   ScrollView,
   BackHandler,
   Modal,
+  Image,
 } from 'react-native';
+import ImagePicker from 'react-native-image-crop-picker';
 
 const Invoice = () => {
   const [productList, setProductList] = useState([]);
   const [isScanned, setIsScanned] = useState(false);
   const [scannerActive, setScannerActive] = useState(true); // Control scanner state
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [data, setData] = useState([]);
   const [customerName, setCustomerName] = useState('');
   const [customerAddress, setCustomerAddress] = useState('');
   const [totalAmount, setTotalAmount] = useState(0);
-  const [isCustomerModalVisible, setIsCustomerModalVisible] = useState(true); // Modal visibility state
+  const [isCustomerModalVisible, setIsCustomerModalVisible] = useState(true);
   const navigation = useNavigation();
   const db = getFirestore();
+  const [imageUris, setImageUris] = useState([]); // State to hold multiple images
 
   useFocusEffect(
     React.useCallback(() => {
@@ -40,21 +42,16 @@ const Invoice = () => {
           'Confirm Exit',
           'Are you sure you want to leave the invoice screen? Any unsaved changes will be lost.',
           [
-            {text: 'Cancel', style: 'cancel'},
-            {
-              text: 'Yes',
-              onPress: () => navigation.goBack(), // Navigate back if the user confirms
-            },
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Yes', onPress: () => navigation.goBack() },
           ],
-          {cancelable: true},
+          { cancelable: true },
         );
         return true; // Prevent default back behavior
       };
 
       BackHandler.addEventListener('hardwareBackPress', onBackPress);
-
-      return () =>
-        BackHandler.removeEventListener('hardwareBackPress', onBackPress);
+      return () => BackHandler.removeEventListener('hardwareBackPress', onBackPress);
     }, [navigation]),
   );
 
@@ -63,10 +60,10 @@ const Invoice = () => {
     const fetchData = async () => {
       try {
         const snapshot = await getDocs(datacollection);
-        const items = snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
+        const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         setData(items);
       } catch (err) {
-        setError('Failed to fetch data');
+        Alert.alert('Failed to fetch data');
       } finally {
         setLoading(false);
       }
@@ -75,128 +72,157 @@ const Invoice = () => {
     fetchData();
   }, []);
 
-  // Handle QR code scan success
-  // Handle QR code scan success
-const handleQRCodeScan = e => {
-  setIsScanned(true); // Change state when QR code is scanned
-  setScannerActive(false); // Pause the scanner until "Add More" is pressed
+  const handleQRCodeScan = e => {
+    setIsScanned(true); // Change state when QR code is scanned
+    setScannerActive(false); // Pause the scanner until "Add More" is pressed
 
-  // Process scanned data here
-  const scannedItem = data.find(item => item.id === e.data);
+    // Process scanned data here
+    const scannedItem = data.find(item => item.id === e.data);
 
-  if (!scannedItem) {
-    Alert.alert('Error', 'Product not found in the database.');
-    return;
-  }
+    if (!scannedItem) {
+      Alert.alert('Error', 'Product not found in the database.');
+      return;
+    }
 
-  // Check if the product is already in the list
-  const existingProduct = productList.find(item => item.id === scannedItem.id);
-  if (existingProduct) {
-    Alert.alert('Error', 'This product is already in the list.');
-    return;
-  }
+    // Check if the product is already in the list
+    const existingProduct = productList.find(item => item.id === scannedItem.id);
+    if (existingProduct) {
+      // If the product exists, increment the quantity
+      incrementQuantity(existingProduct.id);
+      return;
+    }
 
-  // Check if there is sufficient quantity in stock
-  if (scannedItem.quantity <= 0) {
-    Alert.alert('Error', 'Insufficient stock for this product.');
-    return;
-  }
+    // Check if there is sufficient quantity in stock
+    if (scannedItem.quantity <= 0) {
+      Alert.alert('Error', 'Insufficient stock for this product.');
+      return;
+    }
 
-  // If there is sufficient quantity, add the product to the list
-  const newProduct = {
-    id: scannedItem.id,
-    name: scannedItem.name,
-    price: scannedItem.price,
-    commission: scannedItem.commission,
-    quantity: 1, // Set default quantity to 1
-    maxQuantity: scannedItem.quantity, // Use maxQuantity from the database
+    // If there is sufficient quantity, add the product to the list
+    const newProduct = {
+      id: scannedItem.id,
+      name: scannedItem.name,
+      price: scannedItem.price,
+      commission: scannedItem.commission,
+      quantity: 1, // Set default quantity to 1
+      maxQuantity: scannedItem.quantity, // Use maxQuantity from the database
+    };
+
+    setProductList(prev => [...prev, newProduct]);
+    updateTotalAmount([...productList, newProduct]);
   };
 
-  setProductList(prev => [...prev, newProduct]);
-  updateTotalAmount([...productList, newProduct]);
-};
-
-
-  // Update total amount based on product list
   const updateTotalAmount = updatedList => {
     const total = updatedList.reduce(
-      (sum, product) =>
-        sum + (product.price + product.commission) * product.quantity,
+      (sum, product) => sum + (product.price + product.commission) * product.quantity,
       0,
     );
     setTotalAmount(total);
   };
 
-  // Increment product quantity
   const incrementQuantity = productId => {
     const updatedList = productList.map(product =>
-      product.id === productId && product.quantity < product.maxQuantity // Ensure the quantity does not exceed available stock
-        ? {...product, quantity: product.quantity + 1}
+      product.id === productId && product.quantity < product.maxQuantity
+        ? { ...product, quantity: product.quantity + 1 }
         : product,
     );
     setProductList(updatedList);
     updateTotalAmount(updatedList);
   };
 
-  // Decrement product quantity
   const decrementQuantity = productId => {
     const updatedList = productList.map(product =>
       product.id === productId && product.quantity > 1
-        ? {...product, quantity: product.quantity - 1}
+        ? { ...product, quantity: product.quantity - 1 }
         : product,
     );
     setProductList(updatedList);
     updateTotalAmount(updatedList);
   };
 
-  // Reactivate the scanner to scan more items
   const handleAddMoreItems = () => {
     setScannerActive(true);
     setIsScanned(false);
   };
 
-  // Generate printable invoice and update Firestore
   const generatePrintableInvoice = async () => {
-    const productRows = productList
-      .map(
-        product =>
-          `<tr>
-            <td>${product.name}</td>
-            <td>${product.price + product.commission}</td>
-            <td>${product.quantity}</td>
-            <td>${(product.price + product.commission) * product.quantity}</td>
-          </tr>`,
-      )
-      .join('');
-  
+    const productRows = productList.map(
+      product => `
+        <tr>
+          <td>${product.name}</td>
+          <td>${product.price + product.commission}</td>
+          <td>${product.quantity}</td>
+          <td>${(product.price + product.commission) * product.quantity}</td>
+        </tr>`
+    ).join('');
+
     const htmlContent = `
-      <html>
-        <head>
-          <style>
-            body {
-              font-family: Arial, sans-serif;
-            }
-            table {
-              width: 100%;
-              border-collapse: collapse;
-              margin: 20px 0;
-            }
-            table, th, td {
-              border: 1px solid #ddd;
-            }
-            th, td {
-              padding: 8px;
-              text-align: left;
-            }
-            th {
-              background-color: #f2f2f2;
-            }
-          </style>
-        </head>
-        <body>
-          <h1>Invoice</h1>
-          <p>Customer Name: ${customerName}</p>
-          <p>Customer Address: ${customerAddress}</p>
+    <html>
+      <head>
+        <style>
+          body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f9f9f9;
+          }
+          .invoice-container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+          }
+          .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+          }
+          .logo {
+            width: 100px; /* Adjust logo size */
+          }
+          h1 {
+            color: #00796b;
+            margin-bottom: 10px;
+          }
+          .customer-details, .total {
+            margin: 20px 0;
+          }
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+          }
+          table, th, td {
+            border: 1px solid #ddd;
+          }
+          th, td {
+            padding: 10px;
+            text-align: left;
+          }
+          th {
+            background-color: #f2f2f2;
+          }
+          .barcode {
+            margin-top: 20px;
+            text-align: center;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="invoice-container">
+          <div class="header">
+            <img src="src\images\splash_screen.png" alt="Company Logo" class="logo" />
+            <div>
+              <h1>Invoice</h1>
+              <p>Date: ${new Date().toLocaleDateString()}</p>
+            </div>
+          </div>
+          
+          <div class="customer-details">
+            <p><strong>Customer Name:</strong> ${customerName}</p>
+            <p><strong>Customer Address:</strong> ${customerAddress}</p>
+          </div>
+  
           <h2>Products</h2>
           <table>
             <tr>
@@ -207,21 +233,29 @@ const handleQRCodeScan = e => {
             </tr>
             ${productRows}
           </table>
-          <h3>Total Amount: ₹${totalAmount}</h3>
-        </body>
-      </html>
-    `;
+          
+          <div class="total">
+            <h3>Total Amount: ₹${totalAmount}</h3>
+          </div>
+          
+          <div class="barcode">
+            <img src="YOUR_BARCODE_IMAGE_URL" alt="Barcode" />
+            <p>Scan the barcode to view your online bill.</p>
+          </div>
+        </div>
+      </body>
+    </html>
+  `;
   
+
     try {
-      // Step 1: Print the invoice
       await RNPrint.print({ html: htmlContent });
-  
-      // Step 2: Update the product quantities in the Firestore database
+
       await Promise.all(
         productList.map(async (product) => {
           const productRef = doc(datacollection, product.id);
-          const updatedQuantity = product.maxQuantity - product.quantity; // Ensure quantity is reduced after purchase
-  
+          const updatedQuantity = product.maxQuantity - product.quantity;
+
           if (updatedQuantity >= 0) {
             await updateDoc(productRef, {
               quantity: updatedQuantity,
@@ -231,9 +265,8 @@ const handleQRCodeScan = e => {
           }
         })
       );
-  
-      // Step 3: Create a sales report in a new Firestore collection
-      const salesCollection = collection(db, 'salesReports'); // Create 'salesReports' collection
+
+      const salesCollection = collection(db, 'salesReports');
       const salesReport = {
         customerName,
         customerAddress,
@@ -245,12 +278,10 @@ const handleQRCodeScan = e => {
           total: (product.price + product.commission) * product.quantity,
         })),
         totalAmount,
-        date: new Date().toISOString(), // Add date for the sales report
+        date: new Date().toISOString(),
       };
-  
+
       await addDoc(salesCollection, salesReport);
-  
-      // Show success message
       navigation.goBack();
       Alert.alert('Success', 'Invoice generated and sales report saved successfully.');
 
@@ -261,8 +292,7 @@ const handleQRCodeScan = e => {
   };
 
   return (
-    <View style={{flex: 1}}>
-      {/* Modal for entering customer details */}
+    <View style={{ flex: 1 }}>
       <Modal
         transparent={true}
         visible={isCustomerModalVisible}
@@ -270,8 +300,7 @@ const handleQRCodeScan = e => {
         onRequestClose={() => {
           Alert.alert('You need to enter customer details before proceeding.');
         }}>
-        <View
-          style={tw`flex-1 justify-center items-center bg-black bg-opacity-50`}>
+        <View style={tw`flex-1 justify-center items-center bg-black bg-opacity-50`}>
           <View style={tw`bg-white p-8 rounded-lg w-80`}>
             <Text style={tw`text-lg font-bold mb-4`}>Customer Details</Text>
             <TextInput
@@ -300,25 +329,21 @@ const handleQRCodeScan = e => {
         </View>
       </Modal>
 
-      {/* Main invoice screen */}
-      <ScrollView style={tw`  p-5`}>
-        {/* Customer details */}
-        <View style={tw``} >
-          <Text style={tw`text-gray-400`} >Customer Name: {customerName}</Text>
-          <Text style={tw`text-gray-400`} >Customer Address: {customerAddress}</Text>
+      <ScrollView style={tw`p-5`}>
+        <View style={tw``}>
+          <Text style={tw`text-gray-400`}>Customer Name: {customerName}</Text>
+          <Text style={tw`text-gray-400`}>Customer Address: {customerAddress}</Text>
         </View>
 
-        <View style={tw`flex-1  p-10 justify-center items-center`}>
+        <View style={tw`flex-1 p-10 justify-center items-center`}>
           {scannerActive && !isCustomerModalVisible && (
             <QRCodeScanner
               onRead={handleQRCodeScan}
-              reactivate={false} // Scanner is deactivated after a scan
+              reactivate={false}
               topContent={<Text style={tw`z-1`}>Scan a product QR code</Text>}
-              cameraStyle={tw`h-40 w-40 m-auto`} // Set height and width for the camera screen
-              showMarker={true} // Optionally, show the marker to make it clear where to scan
-              markerStyle={tw`border-2 w-25  h-25 ${
-                isScanned ? 'border-green-500' : 'border-blue-500'
-              }`} // Optional marker customization
+              cameraStyle={tw`h-40 w-40 m-auto`}
+              showMarker={true}
+              markerStyle={tw`border-2 w-25 h-25 ${isScanned ? 'border-green-500' : 'border-blue-500'}`}
             />
           )}
 
@@ -346,7 +371,7 @@ const handleQRCodeScan = e => {
           <FlatList
             data={productList}
             keyExtractor={item => item.id}
-            renderItem={({item}) => (
+            renderItem={({ item }) => (
               <View style={styles.productRow}>
                 <Text style={[styles.productName, tw`flex-1 text-black`]}>
                   {item.name}
@@ -422,7 +447,7 @@ const styles = StyleSheet.create({
     marginVertical: 15,
   },
   printButtonText: {
-    color: '#fff',
+    color: 'teal',
     fontSize: 16,
     textAlign: 'center',
   },
