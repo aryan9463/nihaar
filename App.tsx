@@ -13,7 +13,7 @@ import Invoice from './src/screens/Invoice';
 import Splash from './src/screens/ScreenSplash';
 import Notification from './src/components/Notification';
 import RegisterSupplier from './src/screens/AddSupplier';
-import DownloadReport from './src/screens/Statement';
+import Statement from './src/screens/Statement';
 import LinearGradient from 'react-native-linear-gradient';
 
 const Stack = createStackNavigator();
@@ -48,7 +48,7 @@ const App = () => {
             <Stack.Screen name="AddItems" component={RegisterItems} />
             <Stack.Screen name="ProductsData" component={ProductsData} />
             <Stack.Screen name="RegisterSupplier" component={RegisterSupplier} />
-            <Stack.Screen name="DownloadReport" component={DownloadReport} />
+            <Stack.Screen name="Statement" component={Statement} />
             <Stack.Screen
               options={{ headerLeft: () => null }}
               name="INVOICE"

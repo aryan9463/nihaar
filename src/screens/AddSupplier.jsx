@@ -6,7 +6,7 @@ import LinearGradient from 'react-native-linear-gradient';
 
 const RegisterSupplier = () => {
   const [name, setName] = useState('');
-  const [commission, setCommission] = useState(''); // Change from contactNumber to commission
+  const [commission, setCommission] = useState('');
   const [uploading, setUploading] = useState(false);
 
   const handleSubmit = async () => {
@@ -14,18 +14,29 @@ const RegisterSupplier = () => {
       Alert.alert('Missing fields', 'Please fill all fields before submitting.');
       return;
     }
+
+    const commissionValue = parseFloat(commission);
+    if (commissionValue < 0 || commissionValue > 99) {
+      Alert.alert('Invalid commission', 'Commission must be between 0% and 99%.');
+      return;
+    }
+
     setUploading(true);
 
     try {
-      await firestore().collection('suppliers').add({
+      // Create a new document reference
+      const docRef = firestore().collection('suppliers').doc(); // Automatically generates a new ID
+
+      await docRef.set({
+        supplierId: docRef.id, // Store the generated ID in the document
         name,
-        commission: parseFloat(commission), // Ensure commission is stored as a number
+        commission: commissionValue, // Ensure commission is stored as a number
         createdAt: firestore.FieldValue.serverTimestamp(),
       });
       setUploading(false);
       Alert.alert('Success', 'Supplier has been added successfully');
       setName('');
-      setCommission(''); // Clear the commission input
+      setCommission('');
     } catch (error) {
       console.error('Error adding supplier: ', error);
       setUploading(false);
@@ -44,11 +55,15 @@ const RegisterSupplier = () => {
         placeholderTextColor="#888"
       />
 
-      <Text style={tw`text-lg font-semibold text-gray-800 mb-2`}>Commission:</Text>
+      <Text style={tw`text-lg font-semibold text-gray-800 mb-2`}>Commission (%):</Text>
       <TextInput
         value={commission}
-        onChangeText={setCommission}
-        keyboardType="numeric" // Use numeric keyboard for commission
+        onChangeText={text => {
+          if (/^\d{0,2}$/.test(text)) {
+            setCommission(text);
+          }
+        }}
+        keyboardType="numeric"
         style={tw`border-b border-gray-300 mb-4 p-2 text-black`}
         placeholder="Enter commission"
         placeholderTextColor="#888"
@@ -78,4 +93,3 @@ const styles = StyleSheet.create({
 });
 
 export default RegisterSupplier;
-

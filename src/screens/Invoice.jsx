@@ -211,7 +211,7 @@ const Invoice = () => {
       <body>
         <div class="invoice-container">
           <div class="header">
-            <img src="src\images\splash_screen.png" alt="Company Logo" class="logo" />
+            <img src="../images/splash_screen.png" alt="Company Logo" class="logo" />
             <div>
               <h1>Invoice</h1>
               <p>Date: ${new Date().toLocaleDateString()}</p>
@@ -239,7 +239,7 @@ const Invoice = () => {
           </div>
           
           <div class="barcode">
-            <img src="YOUR_BARCODE_IMAGE_URL" alt="Barcode" />
+            <img src="YOUR_BARCODE_IMAGE_URL" alt="||||||||||||" />
             <p>Scan the barcode to view your online bill.</p>
           </div>
         </div>

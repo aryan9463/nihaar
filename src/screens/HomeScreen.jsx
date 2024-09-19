@@ -107,7 +107,7 @@ const HomeScreen = () => {
       {/* Statement Button */}
       <TouchableOpacity
         style={styles.fullWidthButton}
-        onPress={() => navigation.navigate('DownloadReport')}>
+        onPress={() => navigation.navigate('Statement')}>
         <Text style={styles.buttonText}>Statement</Text>
       </TouchableOpacity>
 

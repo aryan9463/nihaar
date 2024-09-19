@@ -1,4 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import QRCode from 'react-native-qrcode-svg';
+import RNPrint from 'react-native-print';
+import React, {useEffect, useRef, useState} from 'react';
+import tw from 'twrnc';
+import {useFocusEffect, useNavigation} from '@react-navigation/native';
+// import Carousel from 'react-native-snap-carousel';
 import {
   View,
   Text,
@@ -9,6 +14,9 @@ import {
   TextInput,
   Alert,
   Button,
+  BackHandler,
+  Dimensions,
+  StyleSheet,
 } from 'react-native';
 import {
   getFirestore,
@@ -18,29 +26,54 @@ import {
   deleteDoc,
   updateDoc,
 } from '@react-native-firebase/firestore';
-import tw from 'twrnc';
-import RNPrint from 'react-native-print'; // For printing functionality
-
+import CustomCarousel from '../components/Corousel';
+const {width: screenWidth} = Dimensions.get('window');
 const db = getFirestore();
 export const datacollection = collection(db, 'datacolnew');
-
+// const { width: screenWidth } = Dimensions.get('window');
 const ProductsData = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [activeIndex, setActiveIndex] = useState(0);
   const [editingItemId, setEditingItemId] = useState(null);
   const [editingValues, setEditingValues] = useState({
     name: '',
     description: '',
     price: '',
-    quantity: '',
+    quantity: null,
   });
+  const navigation = useNavigation();
+  useFocusEffect(
+    React.useCallback(() => {
+      const onBackPress = () => {
+        Alert.alert(
+          'Confirm Exit',
+          'Are you sure you want to leave the Product details? Any unsaved changes will be lost.',
+          [
+            {text: 'Cancel', style: 'cancel'},
+            {
+              text: 'Yes',
+              onPress: () => navigation.goBack(), // Navigate back if the user confirms
+            },
+          ],
+          {cancelable: true},
+        );
+        return true; // Prevent default back behavior
+      };
+
+      BackHandler.addEventListener('hardwareBackPress', onBackPress);
+
+      return () =>
+        BackHandler.removeEventListener('hardwareBackPress', onBackPress);
+    }, [navigation]),
+  );
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const snapshot = await getDocs(datacollection);
-        const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const items = snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
         setData(items);
       } catch (err) {
         setError('Failed to fetch data');
@@ -81,12 +114,14 @@ const ProductsData = () => {
   };
 
   const startEditing = item => {
+    console.log(item.quantity);
+
     setEditingItemId(item.id);
     setEditingValues({
       name: item.name,
       description: item.description,
       price: item.price.toString(),
-      quantity: item.quantity.toString(),
+      quantity: item.quantity,
     });
   };
 
@@ -115,22 +150,22 @@ const ProductsData = () => {
 
       Alert.alert('Success', 'Item updated successfully');
       setEditingItemId(null);
-    } catch (error) {
-      Alert.alert('Error', 'Failed to save changes');
+    } catch (err) {
+      Alert.alert(err, 'Failed to save changes');
     }
   };
 
   const incrementItem = () => {
     setEditingValues(prevValues => ({
       ...prevValues,
-      quantity: (parseInt(prevValues.quantity) + 1).toString(),
+      quantity: (parseInt(prevValues.quantity, 10) + 1).toString(),
     }));
   };
 
   const decrementItem = () => {
     setEditingValues(prevValues => ({
       ...prevValues,
-      quantity: Math.max(1, parseInt(prevValues.quantity) - 1).toString(),
+      quantity: Math.max(1, parseInt(prevValues.quantity, 10) - 1).toString(),
     }));
   };
 
@@ -172,14 +207,17 @@ const ProductsData = () => {
         </head>
         <body>
           <h1>${item.name}</h1>
-          <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${item.id}" alt="QR Code" />
+          <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${
+            item.id
+          }" alt="QR Code" />
           <p>₹${(item.price + item.commission).toFixed(2)}</p>
         </body>
       </html>
-    `;
 
+
+    `;
     try {
-      await RNPrint.print({ html: htmlContent });
+      await RNPrint.print({html: htmlContent});
     } catch (error) {
       console.error('Error generating printable tag: ', error);
     }
@@ -209,7 +247,24 @@ const ProductsData = () => {
       </View>
     );
   }
+  console.log(data);
 
+  // const imageData = [
+  //   {uri: 'https://via.placeholder.com/400x300/FF0000/FFFFFF?text=Image1'},
+  //   {uri: 'https://via.placeholder.com/400x300/00FF00/FFFFFF?text=Image2'},
+  //   {uri: 'https://via.placeholder.com/400x300/0000FF/FFFFFF?text=Image3'},
+  //   {uri: 'https://via.placeholder.com/400x300/FFFF00/FFFFFF?text=Image4'},
+  //   {uri: 'https://via.placeholder.com/400x300/00FFFF/FFFFFF?text=Image5'},
+  // ];
+
+  // // Render individual carousel items
+  // const renderItem = ({item}) => {
+  //   return (
+  //     <View style={styles.carouselItem}>
+  //       <Image source={{uri: item.uri}} style={styles.image} />
+  //     </View>
+  //   );
+  // };
   return (
     <View style={tw`flex-1 p-5 bg-gray-100`}>
       <FlatList
@@ -220,82 +275,135 @@ const ProductsData = () => {
             Available Products
           </Text>
         )}
-        renderItem={({ item }) => (
-          <View style={tw`bg-white p-4 mb-5 rounded-lg shadow flex-row justify-between`}>
+        renderItem={({item}) => (
+          <View
+            style={tw`bg-white p-4 mb-5  rounded-lg shadow flex-row justify-between`}>
             <View>
               {editingItemId === item.id ? (
                 <>
                   <TextInput
                     value={editingValues.name}
-                    onChangeText={text => setEditingValues(prev => ({ ...prev, name: text }))}
+                    onChangeText={text =>
+                      setEditingValues(prev => ({...prev, name: text}))
+                    }
                     style={tw`border-b mb-2 p-2 text-black`}
                   />
                   <TextInput
                     value={editingValues.description}
-                    onChangeText={text => setEditingValues(prev => ({ ...prev, description: text }))}
+                    onChangeText={text =>
+                      setEditingValues(prev => ({...prev, description: text}))
+                    }
                     style={tw`border-b mb-2 p-2 text-black`}
                   />
                   <TextInput
                     value={editingValues.price}
-                    onChangeText={text => setEditingValues(prev => ({ ...prev, price: text }))}
+                    onChangeText={text =>
+                      setEditingValues(prev => ({...prev, price: text}))
+                    }
                     keyboardType="numeric"
                     style={tw`border-b mb-2 p-2 text-black`}
                   />
-                  <TextInput
-                    value={editingValues.quantity}
-                    onChangeText={text => setEditingValues(prev => ({ ...prev, quantity: text }))}
-                    keyboardType="numeric"
-                    style={tw`border-b mb-2 p-2 text-black`}
-                  />
+
                   <View style={tw`flex-row items-center`}>
                     <TouchableOpacity onPress={decrementItem}>
-                      <Text style={tw`text-2xl px-2`}>-</Text>
+                      <Text style={tw`text-2xl text-black px-2`}>-</Text>
                     </TouchableOpacity>
-                    <Text style={tw`text-xl`}>{editingValues.quantity}</Text>
+                    <Text style={tw`text-xl text-black`}>
+                      {editingValues.quantity}
+                    </Text>
                     <TouchableOpacity onPress={incrementItem}>
-                      <Text style={tw`text-2xl px-2`}>+</Text>
+                      <Text style={tw`text-2xl text-black px-2`}>+</Text>
                     </TouchableOpacity>
                   </View>
                   <Button title="Save" onPress={() => saveChanges(item.id)} />
                 </>
               ) : (
                 <>
-                  <Text style={tw`text-xl font-bold text-black`}>{item.name}</Text>
-                  <Text style={tw`text-sm text-gray-500`}>{item.description}</Text>
-                  <Text style={tw`text-lg text-green-600`}>₹{(item.price + item.commission).toFixed(2)}</Text>
-                  <Text style={tw`text-yellow-600`}>Items: {item.quantity}</Text>
-                  <TouchableOpacity onPress={() => confirmDelete(item.id)}>
-                    <Text style={tw`text-red-500`}>Delete</Text>
+                  <Text style={tw`text-xl font-bold text-black`}>
+                    {item.name}
+                  </Text>
+                  <Text style={tw`text-sm text-gray-500`}>
+                    {item.description}
+                  </Text>
+                  <Text style={tw`text-lg text-green-600`}>
+                    ₹{(item.price + item.commission).toFixed(2)}
+                  </Text>
+                  <Text style={tw`text-yellow-600`}>
+                    Items: {item.quantity}
+                  </Text>
+                  <TouchableOpacity
+                    style={tw`absolute bottom-0 z-1 left-0 opacity-50`}
+                    onPress={() => confirmDelete(item.id)}>
+                    <Image
+                      style={tw`w-8 h-8`}
+                      source={require('../images/bin.png')}
+                    />
                   </TouchableOpacity>
-                  <TouchableOpacity onPress={() => startEditing(item)}>
-                    <Text style={tw`text-blue-500`}>Edit</Text>
+                  <TouchableOpacity
+                    style={tw`absolute bottom-0 z-1 left-10 opacity-50`}
+                    onPress={() => startEditing(item)}>
+                    <Image
+                      style={tw`w-8 h-8`}
+                      source={require('../images/pen.png')}
+                    />
                   </TouchableOpacity>
-                  <TouchableOpacity onPress={() => generatePrintableTag(item)}>
-                    <Text style={tw`text-purple-500`}>Print Tag</Text>
+                  <TouchableOpacity
+                    style={tw`absolute bottom-0 z-1 left-20 `}
+                    onPress={() => generatePrintableTag(item)}>
+                    <Image
+                      style={tw`w-7 h-7`}
+                      source={require('../images/label.png')}
+                    />
                   </TouchableOpacity>
                 </>
               )}
             </View>
-            <View>
-              {item.imageUrl && Array.isArray(item.imageUrl) && (
-                <FlatList
-                  data={item.imageUrl}
-                  keyExtractor={(imageUri, index) => index.toString()}
-                  horizontal
-                  renderItem={({ item: imageUri }) => (
-                    <Image
-                      source={{ uri: imageUri }}
-                      style={tw`w-36 h-36 rounded-lg mt-2`}
-                    />
-                  )}
-                />
+            <View style={tw``}>
+              {item.imageUrl && item.imageUrl.length > 0 ? (
+                <CustomCarousel images={item.imageUrl} />
+              ) : (
+                <Text>No Images Available</Text>
               )}
             </View>
+            {/* <View style={styles.container}>
+              <Carousel
+                ref={carouselRef}
+                data={imageData}
+                sliderWidth={screenWidth}
+                itemWidth={screenWidth * 0.8} // Set the width of each carousel item
+                renderItem={renderItem}
+                onSnapToItem={index => setActiveIndex(index)} // Update active index on snap
+                layout="default" // Can use "default", "stack", or "tinder" layout
+              />
+              <Text style={styles.caption}>
+                Image {activeIndex + 1} of {imageData.length}
+              </Text>
+            </View> */}
           </View>
         )}
       />
     </View>
   );
 };
-
-export default ProductsData;
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  carouselItem: {
+    backgroundColor: 'white',
+    borderRadius: 8,
+    overflow: 'hidden',
+  },
+  image: {
+    width: '100%',
+    height: 250,
+  },
+  caption: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#333',
+  },
+});
+export default ProductsData; 

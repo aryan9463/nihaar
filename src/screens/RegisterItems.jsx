@@ -21,6 +21,7 @@ import {
 } from '@react-native-firebase/firestore';
 import LinearGradient from 'react-native-linear-gradient';
 import { Picker } from '@react-native-picker/picker';
+import tw from 'twrnc';
 
 // Initialize Firestore
 const firebaseConfig = {
@@ -241,7 +242,7 @@ const RegisterItems = () => {
           </View>
         )}
         <TouchableOpacity style={styles.button} onPress={handleSubmit} disabled={uploading}>
-          <Text style={styles.buttonText}>Submit</Text>
+        <Text style={tw`text-white text-center`}>{uploading ? 'Submitting...' : 'Submit'}</Text>
         </TouchableOpacity>
       </ScrollView>
     </LinearGradient>
