@@ -1,9 +1,8 @@
 import QRCode from 'react-native-qrcode-svg';
 import RNPrint from 'react-native-print';
-import React, {useEffect, useRef, useState} from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import tw from 'twrnc';
-import {useFocusEffect, useNavigation} from '@react-navigation/native';
-// import Carousel from 'react-native-snap-carousel';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import {
   View,
   Text,
@@ -27,15 +26,15 @@ import {
   updateDoc,
 } from '@react-native-firebase/firestore';
 import CustomCarousel from '../components/Corousel';
-const {width: screenWidth} = Dimensions.get('window');
+
+const { width: screenWidth } = Dimensions.get('window');
 const db = getFirestore();
 export const datacollection = collection(db, 'datacolnew');
-// const { width: screenWidth } = Dimensions.get('window');
+
 const ProductsData = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [activeIndex, setActiveIndex] = useState(0);
   const [editingItemId, setEditingItemId] = useState(null);
   const [editingValues, setEditingValues] = useState({
     name: '',
@@ -44,6 +43,7 @@ const ProductsData = () => {
     quantity: null,
   });
   const navigation = useNavigation();
+
   useFocusEffect(
     React.useCallback(() => {
       const onBackPress = () => {
@@ -51,15 +51,15 @@ const ProductsData = () => {
           'Confirm Exit',
           'Are you sure you want to leave the Product details? Any unsaved changes will be lost.',
           [
-            {text: 'Cancel', style: 'cancel'},
+            { text: 'Cancel', style: 'cancel' },
             {
               text: 'Yes',
-              onPress: () => navigation.goBack(), // Navigate back if the user confirms
+              onPress: () => navigation.goBack(),
             },
           ],
-          {cancelable: true},
+          { cancelable: true },
         );
-        return true; // Prevent default back behavior
+        return true;
       };
 
       BackHandler.addEventListener('hardwareBackPress', onBackPress);
@@ -73,7 +73,7 @@ const ProductsData = () => {
     const fetchData = async () => {
       try {
         const snapshot = await getDocs(datacollection);
-        const items = snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
+        const items = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         setData(items);
       } catch (err) {
         setError('Failed to fetch data');
@@ -114,8 +114,6 @@ const ProductsData = () => {
   };
 
   const startEditing = item => {
-    console.log(item.quantity);
-
     setEditingItemId(item.id);
     setEditingValues({
       name: item.name,
@@ -210,14 +208,12 @@ const ProductsData = () => {
           <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${
             item.id
           }" alt="QR Code" />
-          <p>₹${(item.price + item.commission).toFixed(2)}</p>
+          <p>₹${item.price.toFixed(2)}</p>
         </body>
       </html>
-
-
     `;
     try {
-      await RNPrint.print({html: htmlContent});
+      await RNPrint.print({ html: htmlContent });
     } catch (error) {
       console.error('Error generating printable tag: ', error);
     }
@@ -247,24 +243,7 @@ const ProductsData = () => {
       </View>
     );
   }
-  console.log(data);
 
-  // const imageData = [
-  //   {uri: 'https://via.placeholder.com/400x300/FF0000/FFFFFF?text=Image1'},
-  //   {uri: 'https://via.placeholder.com/400x300/00FF00/FFFFFF?text=Image2'},
-  //   {uri: 'https://via.placeholder.com/400x300/0000FF/FFFFFF?text=Image3'},
-  //   {uri: 'https://via.placeholder.com/400x300/FFFF00/FFFFFF?text=Image4'},
-  //   {uri: 'https://via.placeholder.com/400x300/00FFFF/FFFFFF?text=Image5'},
-  // ];
-
-  // // Render individual carousel items
-  // const renderItem = ({item}) => {
-  //   return (
-  //     <View style={styles.carouselItem}>
-  //       <Image source={{uri: item.uri}} style={styles.image} />
-  //     </View>
-  //   );
-  // };
   return (
     <View style={tw`flex-1 p-5 bg-gray-100`}>
       <FlatList
@@ -275,35 +254,33 @@ const ProductsData = () => {
             Available Products
           </Text>
         )}
-        renderItem={({item}) => (
-          <View
-            style={tw`bg-white p-4 mb-5  rounded-lg shadow flex-row justify-between`}>
-            <View>
+        renderItem={({ item }) => (
+          <View style={tw`bg-white p-4 mb-5 rounded-lg shadow flex-row`}>
+            <View style={tw`flex-1`}>
               {editingItemId === item.id ? (
                 <>
                   <TextInput
                     value={editingValues.name}
                     onChangeText={text =>
-                      setEditingValues(prev => ({...prev, name: text}))
+                      setEditingValues(prev => ({ ...prev, name: text }))
                     }
                     style={tw`border-b mb-2 p-2 text-black`}
                   />
                   <TextInput
                     value={editingValues.description}
                     onChangeText={text =>
-                      setEditingValues(prev => ({...prev, description: text}))
+                      setEditingValues(prev => ({ ...prev, description: text }))
                     }
                     style={tw`border-b mb-2 p-2 text-black`}
                   />
                   <TextInput
                     value={editingValues.price}
                     onChangeText={text =>
-                      setEditingValues(prev => ({...prev, price: text}))
+                      setEditingValues(prev => ({ ...prev, price: text }))
                     }
                     keyboardType="numeric"
                     style={tw`border-b mb-2 p-2 text-black`}
                   />
-
                   <View style={tw`flex-row items-center`}>
                     <TouchableOpacity onPress={decrementItem}>
                       <Text style={tw`text-2xl text-black px-2`}>-</Text>
@@ -322,11 +299,11 @@ const ProductsData = () => {
                   <Text style={tw`text-xl font-bold text-black`}>
                     {item.name}
                   </Text>
-                  <Text style={tw`text-sm text-gray-500`}>
+                  <Text style={tw`text-sm text-gray-500 text-left`}>
                     {item.description}
                   </Text>
                   <Text style={tw`text-lg text-green-600`}>
-                    ₹{(item.price + item.commission).toFixed(2)}
+                    ₹{item.price.toFixed(2)}
                   </Text>
                   <Text style={tw`text-yellow-600`}>
                     Items: {item.quantity}
@@ -358,39 +335,21 @@ const ProductsData = () => {
                 </>
               )}
             </View>
-            <View style={tw``}>
+            <View style={tw`ml-4`}>
               {item.imageUrl && item.imageUrl.length > 0 ? (
                 <CustomCarousel images={item.imageUrl} />
               ) : (
                 <Text>No Images Available</Text>
               )}
             </View>
-            {/* <View style={styles.container}>
-              <Carousel
-                ref={carouselRef}
-                data={imageData}
-                sliderWidth={screenWidth}
-                itemWidth={screenWidth * 0.8} // Set the width of each carousel item
-                renderItem={renderItem}
-                onSnapToItem={index => setActiveIndex(index)} // Update active index on snap
-                layout="default" // Can use "default", "stack", or "tinder" layout
-              />
-              <Text style={styles.caption}>
-                Image {activeIndex + 1} of {imageData.length}
-              </Text>
-            </View> */}
           </View>
         )}
       />
     </View>
   );
 };
+
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
   carouselItem: {
     backgroundColor: 'white',
     borderRadius: 8,
@@ -406,4 +365,5 @@ const styles = StyleSheet.create({
     color: '#333',
   },
 });
-export default ProductsData; 
+
+export default ProductsData;

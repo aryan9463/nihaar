@@ -14,7 +14,7 @@ import Splash from './src/screens/ScreenSplash';
 import Notification from './src/components/Notification';
 import RegisterSupplier from './src/screens/AddSupplier';
 import Statement from './src/screens/Statement';
-import LinearGradient from 'react-native-linear-gradient';
+// import LinearGradient from 'react-native-linear-gradient';
 
 const Stack = createStackNavigator();
 
@@ -42,6 +42,7 @@ const App = () => {
                 headerStyle: {
                   backgroundColor: 'gray',
                 },
+                headerLeft: () => null,
               }}
               component={GoogleSignIn}
             />

@@ -3,7 +3,7 @@ import {
   Alert, 
   Text, 
   TextInput, 
-  TouchableOpacity, 
+  Pressable, 
   View, 
   Modal, 
   StyleSheet 
@@ -64,52 +64,52 @@ const HomeScreen = () => {
     <LinearGradient colors={['#e0f7fa', '#80deea']} style={styles.container}>
       <Text style={styles.welcomeText}>Welcome, {user.name}</Text>
 
-      <TouchableOpacity
+      <Pressable
         onPress={() => navigation.navigate('INVOICE')}
         style={styles.fullWidthButton}>
         <Text style={styles.buttonText}>Start New Invoice</Text>
-      </TouchableOpacity>
+      </Pressable>
 
       <View style={styles.buttonContainer}>
-        <TouchableOpacity
+        <Pressable
           style={styles.fullWidthButton}
           onPress={() => navigation.navigate('AddItems')}>
           <Text style={styles.buttonText}>Register Items</Text>
-        </TouchableOpacity>
+        </Pressable>
 
-        <TouchableOpacity
+        <Pressable
           style={styles.fullWidthButton}
           onPress={() => navigation.navigate('RegisterSupplier')}>
           <Text style={styles.buttonText}>Register Supplier</Text>
-        </TouchableOpacity>
+        </Pressable>
       </View>
 
-      <TouchableOpacity
+      <Pressable
         style={styles.fullWidthButton}
         onPress={() => setModalVisible(true)}>
         <Text style={styles.buttonText}>Available Items</Text>
-      </TouchableOpacity>
+      </Pressable>
 
       <View style={styles.actionContainer}>
-        <TouchableOpacity
+        <Pressable
           style={styles.outlineButton}
           onPress={confirmSignOut}>
           <Text style={styles.outlineButtonText}>Sign Out</Text>
-        </TouchableOpacity>
+        </Pressable>
 
-        <TouchableOpacity
+        <Pressable
           style={styles.outlineButton}
           onPress={() => setChangePinModalVisible(true)}>
           <Text style={styles.outlineButtonText}>Change PIN</Text>
-        </TouchableOpacity>
+        </Pressable>
       </View>
 
       {/* Statement Button */}
-      <TouchableOpacity
+      <Pressable
         style={styles.fullWidthButton}
         onPress={() => navigation.navigate('Statement')}>
         <Text style={styles.buttonText}>Statement</Text>
-      </TouchableOpacity>
+      </Pressable>
 
       {/* Modal for password prompt */}
       <Modal
@@ -128,19 +128,19 @@ const HomeScreen = () => {
               secureTextEntry={true}
               style={styles.modalInput}
             />
-            <TouchableOpacity
+            <Pressable
               style={styles.modalButton}
               onPress={validatePassword}>
               <Text style={styles.buttonText}>Submit</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
+            </Pressable>
+            <Pressable
               style={styles.cancelButton}
               onPress={() => {
                 setModalVisible(false);
                 setPassword('');
               }}>
               <Text style={styles.cancelButtonText}>Cancel</Text>
-            </TouchableOpacity>
+            </Pressable>
           </View>
         </View>
       </Modal>
@@ -170,12 +170,12 @@ const HomeScreen = () => {
               secureTextEntry={true}
               style={styles.modalInput}
             />
-            <TouchableOpacity
+            <Pressable
               style={styles.modalButton}
               onPress={handleChangePin}>
               <Text style={styles.buttonText}>Submit</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
+            </Pressable>
+            <Pressable
               style={styles.cancelButton}
               onPress={() => {
                 setChangePinModalVisible(false);
@@ -183,7 +183,7 @@ const HomeScreen = () => {
                 setNewPin('');
               }}>
               <Text style={styles.cancelButtonText}>Cancel</Text>
-            </TouchableOpacity>
+            </Pressable>
           </View>
         </View>
       </Modal>
@@ -196,30 +196,32 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
     alignItems: 'center',
+    backgroundColor: '#ffffff',
   },
   welcomeText: {
-    color: 'black',
+    color: '#00796b',
     marginTop: 20,
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
     fontStyle: 'italic',
+    marginBottom: 30,
   },
   fullWidthButton: {
     backgroundColor: '#00796b',
-    borderRadius: 10,
-    width: '100%',  // Full width
-    paddingVertical: 20, // Increased height
+    borderRadius: 30,
+    width: '100%',
+    paddingVertical: 15,
     alignItems: 'center',
-    marginTop: 20,
+    marginTop: 15,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.8,
-    shadowRadius: 2,
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
   },
   buttonText: {
     color: 'white',
     fontSize: 18,
-    textAlign:'center'
+    textAlign: 'center',
   },
   buttonContainer: {
     width: '100%',
@@ -231,16 +233,22 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   outlineButton: {
-    backgroundColor: '#B0BEC5',
-    borderRadius: 10,
+    backgroundColor: 'lightgrey',
+    borderWidth: 1,
+    borderColor: 'black',
+    borderRadius: 30,
     height: 50,
     width: '45%',
     justifyContent: 'center',
     alignItems: 'center',
     margin: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
   },
   outlineButtonText: {
-    color: 'white',
+    color: 'black',
     fontSize: 16,
   },
   modalContainer: {

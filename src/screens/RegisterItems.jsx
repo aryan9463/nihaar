@@ -46,7 +46,6 @@ const RegisterItems = () => {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [imageUris, setImageUris] = useState([]); // Array for multiple images
-  const [commission, setCommission] = useState('');
   const [price, setPrice] = useState('');
   const [quantity, setQuantity] = useState('');
   const [uploading, setUploading] = useState(false);
@@ -127,15 +126,11 @@ const RegisterItems = () => {
   };
 
   const handleSupplierChange = (supplierId) => {
-    const selected = suppliers.find(supplier => supplier.id === supplierId);
-    if (selected) {
-      setCommission(selected.commission.toString()); // Update commission with the selected supplier's commission
-    }
     setSelectedSupplier(supplierId); // Set the selected supplier ID
   };
 
   const handleSubmit = async () => {
-    if (!name || !description || !price || !commission || !quantity) {
+    if (!name || !description || !price || !quantity || !selectedSupplier) {
       Alert.alert('Missing fields', 'Please fill all fields before submitting.');
       return;
     }
@@ -147,16 +142,15 @@ const RegisterItems = () => {
           name,
           description,
           price: parseFloat(price),
-          commission: parseFloat(commission),
           quantity: parseInt(quantity, 10),
           imageUrl: imageUrls, // Save array of image URLs
+          supplierId: selectedSupplier, // Save selected supplier ID
           createdAt: serverTimestamp(),
         });
         Alert.alert('Success', 'Form submitted successfully!');
         setName('');
         setDescription('');
         setPrice('');
-        setCommission('');
         setQuantity('');
         setImageUris([]); // Clear the image array
         setSelectedSupplier(''); // Clear selected supplier
@@ -193,15 +187,6 @@ const RegisterItems = () => {
           placeholderTextColor="#888"
           onChangeText={setPrice}
           keyboardType="numeric"
-          style={styles.input}
-        />
-        <Text style={styles.label}>Commission:</Text>
-        <TextInput
-          value={commission}
-          onChangeText={setCommission}
-          keyboardType="numeric"
-          placeholder="Enter commission"
-          placeholderTextColor="#888"
           style={styles.input}
         />
         <Text style={styles.label}>Number of Items:</Text>
@@ -242,7 +227,7 @@ const RegisterItems = () => {
           </View>
         )}
         <TouchableOpacity style={styles.button} onPress={handleSubmit} disabled={uploading}>
-        <Text style={tw`text-white text-center`}>{uploading ? 'Submitting...' : 'Submit'}</Text>
+          <Text style={tw`text-white text-center`}>{uploading ? 'Submitting...' : 'Submit'}</Text>
         </TouchableOpacity>
       </ScrollView>
     </LinearGradient>

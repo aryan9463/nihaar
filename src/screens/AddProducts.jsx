@@ -37,10 +37,10 @@ const AddProducts = () => {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [imageUris, setImageUris] = useState([]); // Array for multiple images
-  const [commission, setCommission] = useState('');
   const [price, setPrice] = useState('');
   const [numberOfItems, setNumberOfItems] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [supplierId, setSupplierId] = useState(''); // New state for supplierId
 
   const pickImages = () => {
     ImagePicker.openPicker({
@@ -85,7 +85,7 @@ const AddProducts = () => {
   };
 
   const handleSubmit = async () => {
-    if (!name || !description || !price || !commission || !numberOfItems) {
+    if (!name || !description || !price || !numberOfItems || !supplierId) {
       Alert.alert('Missing fields', 'Please fill all fields before submitting.');
       return;
     }
@@ -97,16 +97,15 @@ const AddProducts = () => {
           name,
           description,
           price: parseFloat(price),
-          commission: parseFloat(commission),
           numberOfItems: parseInt(numberOfItems, 10),
           imageUrls, // Save array of image URLs
+          supplierId, // Send supplierId but don't display it
           createdAt: serverTimestamp(),
         });
         Alert.alert('Success', 'Form submitted successfully!');
         setName('');
         setDescription('');
         setPrice('');
-        setCommission('');
         setNumberOfItems('');
         setImageUris([]); // Clear the image array
       }
@@ -144,21 +143,20 @@ const AddProducts = () => {
           keyboardType="numeric"
           style={styles.input}
         />
-        <Text style={styles.label}>Commission:</Text>
-        <TextInput
-          value={commission}
-          onChangeText={setCommission}
-          keyboardType="numeric"
-          placeholder="Enter commission"
-          placeholderTextColor="#888"
-          style={styles.input}
-        />
         <Text style={styles.label}>Number of Items:</Text>
         <TextInput
           value={numberOfItems}
           onChangeText={setNumberOfItems}
           keyboardType="numeric"
           placeholder="Enter number of items"
+          placeholderTextColor="#888"
+          style={styles.input}
+        />
+        <Text style={styles.label}>Supplier ID:</Text>
+        <TextInput
+          value={supplierId}
+          onChangeText={setSupplierId}
+          placeholder="Enter supplier ID"
           placeholderTextColor="#888"
           style={styles.input}
         />

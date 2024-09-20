@@ -17,14 +17,12 @@ import {
   ScrollView,
   BackHandler,
   Modal,
-  Image,
 } from 'react-native';
-import ImagePicker from 'react-native-image-crop-picker';
 
 const Invoice = () => {
   const [productList, setProductList] = useState([]);
   const [isScanned, setIsScanned] = useState(false);
-  const [scannerActive, setScannerActive] = useState(true); // Control scanner state
+  const [scannerActive, setScannerActive] = useState(true);
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState([]);
   const [customerName, setCustomerName] = useState('');
@@ -33,7 +31,6 @@ const Invoice = () => {
   const [isCustomerModalVisible, setIsCustomerModalVisible] = useState(true);
   const navigation = useNavigation();
   const db = getFirestore();
-  const [imageUris, setImageUris] = useState([]); // State to hold multiple images
 
   useFocusEffect(
     React.useCallback(() => {
@@ -47,7 +44,7 @@ const Invoice = () => {
           ],
           { cancelable: true },
         );
-        return true; // Prevent default back behavior
+        return true;
       };
 
       BackHandler.addEventListener('hardwareBackPress', onBackPress);
@@ -55,7 +52,6 @@ const Invoice = () => {
     }, [navigation]),
   );
 
-  // Fetch data from Firestore
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -73,10 +69,9 @@ const Invoice = () => {
   }, []);
 
   const handleQRCodeScan = e => {
-    setIsScanned(true); // Change state when QR code is scanned
-    setScannerActive(false); // Pause the scanner until "Add More" is pressed
+    setIsScanned(true);
+    setScannerActive(false);
 
-    // Process scanned data here
     const scannedItem = data.find(item => item.id === e.data);
 
     if (!scannedItem) {
@@ -84,28 +79,23 @@ const Invoice = () => {
       return;
     }
 
-    // Check if the product is already in the list
     const existingProduct = productList.find(item => item.id === scannedItem.id);
     if (existingProduct) {
-      // If the product exists, increment the quantity
       incrementQuantity(existingProduct.id);
       return;
     }
 
-    // Check if there is sufficient quantity in stock
     if (scannedItem.quantity <= 0) {
       Alert.alert('Error', 'Insufficient stock for this product.');
       return;
     }
 
-    // If there is sufficient quantity, add the product to the list
     const newProduct = {
       id: scannedItem.id,
       name: scannedItem.name,
       price: scannedItem.price,
-      commission: scannedItem.commission,
-      quantity: 1, // Set default quantity to 1
-      maxQuantity: scannedItem.quantity, // Use maxQuantity from the database
+      quantity: 1,
+      maxQuantity: scannedItem.quantity,
     };
 
     setProductList(prev => [...prev, newProduct]);
@@ -114,7 +104,7 @@ const Invoice = () => {
 
   const updateTotalAmount = updatedList => {
     const total = updatedList.reduce(
-      (sum, product) => sum + (product.price + product.commission) * product.quantity,
+      (sum, product) => sum + (product.price) * product.quantity,
       0,
     );
     setTotalAmount(total);
@@ -150,9 +140,9 @@ const Invoice = () => {
       product => `
         <tr>
           <td>${product.name}</td>
-          <td>${product.price + product.commission}</td>
+          <td>${product.price}</td>
           <td>${product.quantity}</td>
-          <td>${(product.price + product.commission) * product.quantity}</td>
+          <td>${(product.price) * product.quantity}</td>
         </tr>`
     ).join('');
 
@@ -172,20 +162,9 @@ const Invoice = () => {
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
           }
-          .header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-          }
-          .logo {
-            width: 100px; /* Adjust logo size */
-          }
           h1 {
             color: #00796b;
             margin-bottom: 10px;
-          }
-          .customer-details, .total {
-            margin: 20px 0;
           }
           table {
             width: 100%;
@@ -202,27 +181,16 @@ const Invoice = () => {
           th {
             background-color: #f2f2f2;
           }
-          .barcode {
-            margin-top: 20px;
-            text-align: center;
-          }
         </style>
       </head>
       <body>
         <div class="invoice-container">
-          <div class="header">
-            <img src="../images/splash_screen.png" alt="Company Logo" class="logo" />
-            <div>
-              <h1>Invoice</h1>
-              <p>Date: ${new Date().toLocaleDateString()}</p>
-            </div>
-          </div>
-          
-          <div class="customer-details">
+          <h1>Invoice</h1>
+          <p>Date: ${new Date().toLocaleDateString()}</p>
+          <div>
             <p><strong>Customer Name:</strong> ${customerName}</p>
             <p><strong>Customer Address:</strong> ${customerAddress}</p>
           </div>
-  
           <h2>Products</h2>
           <table>
             <tr>
@@ -233,20 +201,12 @@ const Invoice = () => {
             </tr>
             ${productRows}
           </table>
-          
-          <div class="total">
+          <div>
             <h3>Total Amount: ₹${totalAmount}</h3>
-          </div>
-          
-          <div class="barcode">
-            <img src="YOUR_BARCODE_IMAGE_URL" alt="||||||||||||" />
-            <p>Scan the barcode to view your online bill.</p>
           </div>
         </div>
       </body>
-    </html>
-  `;
-  
+    </html>`;
 
     try {
       await RNPrint.print({ html: htmlContent });
@@ -271,11 +231,11 @@ const Invoice = () => {
         customerName,
         customerAddress,
         products: productList.map(product => ({
+          productId: product.id, // Include product ID here
           name: product.name,
           price: product.price,
-          commission: product.commission,
           quantity: product.quantity,
-          total: (product.price + product.commission) * product.quantity,
+          total: (product.price) * product.quantity,
         })),
         totalAmount,
         date: new Date().toISOString(),
@@ -357,9 +317,7 @@ const Invoice = () => {
         </View>
 
         <View style={[styles.productRow, tw``]}>
-          <Text style={[styles.productName, tw`text-gray-400 flex-1`]}>
-            Name
-          </Text>
+          <Text style={[styles.productName, tw`text-gray-400 flex-1`]}>Name</Text>
           <View style={tw`flex-row flex-1 justify-between`}>
             <Text style={[styles.productName, tw`text-gray-400`]}>Price</Text>
             <Text style={[styles.productName, tw`text-gray-400`]}>Qty</Text>
@@ -373,46 +331,34 @@ const Invoice = () => {
             keyExtractor={item => item.id}
             renderItem={({ item }) => (
               <View style={styles.productRow}>
-                <Text style={[styles.productName, tw`flex-1 text-black`]}>
-                  {item.name}
-                </Text>
+                <Text style={[styles.productName, tw`flex-1 text-black`]}>{item.name}</Text>
                 <View style={tw`flex-row flex-1 justify-between`}>
                   <Text style={[styles.productName, tw`text-black`]}>
-                    ₹{item.price + item.commission}
+                    ₹{item.price}
                   </Text>
                   <View style={tw`flex-row items-center justify-center`}>
-                    <TouchableOpacity
-                      onPress={() => decrementQuantity(item.id)}
-                      style={styles.quantityButton}>
+                    <TouchableOpacity onPress={() => decrementQuantity(item.id)} style={styles.quantityButton}>
                       <Text style={styles.buttonText}>-</Text>
                     </TouchableOpacity>
-                    <Text style={[styles.productName, tw`text-yellow-500`]}>
-                      {item.quantity}
-                    </Text>
-                    <TouchableOpacity
-                      onPress={() => incrementQuantity(item.id)}
-                      style={styles.quantityButton}>
+                    <Text style={[styles.productName, tw`text-yellow-500`]}>{item.quantity}</Text>
+                    <TouchableOpacity onPress={() => incrementQuantity(item.id)} style={styles.quantityButton}>
                       <Text style={styles.buttonText}>+</Text>
                     </TouchableOpacity>
                   </View>
                   <Text style={[styles.productName, tw`text-blue-400`]}>
-                    ₹{(item.price + item.commission) * item.quantity}
+                    ₹{(item.price) * item.quantity}
                   </Text>
                 </View>
               </View>
             )}
           />
         ) : (
-          <Text style={tw`text-gray-400 text-center`}>
-            No products added yet
-          </Text>
+          <Text style={tw`text-gray-400 text-center`}>No products added yet</Text>
         )}
 
         <Text style={styles.totalText}>Total: ₹{totalAmount}</Text>
 
-        <TouchableOpacity
-          onPress={generatePrintableInvoice}
-          style={styles.printButton}>
+        <TouchableOpacity onPress={generatePrintableInvoice} style={styles.printButton}>
           <Text style={styles.printButtonText}>Generate Invoice</Text>
         </TouchableOpacity>
       </ScrollView>
